@@ -59,22 +59,34 @@ typedef struct {
 void leitura (LLV *storeED);
 void area_de_trab (LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]);
 void StoreED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]);
-void print_LLV(LLV *storeED);
+void print_store(LLV *storeED);
 void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]);
 int verif_storeED(LLV *storeED,char nome[namesize]);
+
 void add_meusApps(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL],int pos);
 int add_fila(LLSE *meusApps, FILA *fila, App app);
 void add_ini_LLDE_fila(FILA *fila, int disp);
 void add_LLSE(LLSE *meusApps, App app, int disp, int pos, int local);
 void add_LLV(LLV *storeED, App *temp);
+void add_LLDE(LLDE *exe, App app, int disp, int pos, int local);
+
 void ordena_LLSE(LLSE *v, App app);
+void ordena_LLDE(LLDE *exe, App app) ;
+
 int busca_pos(LLSE *meusApps, int x);
 int busca_app_fila(FILA *fila, char nome[namesize]);
 int busca_app_LLSE(LLSE *meusApps,char nome[namesize]);
 int busca_LLDEfila(FILA *v, int x);
+int busca_LLDE(LLDE *v, int x);
+
 int alocaNo(LLSE *v);
 int aloca_na_fila(FILA * fila);
+int aloca_LLDE(LLDE *exe);
+
 void remove_fila(FILA *fila, int x);
+void removeLLDE(LLDE *exe, int x);
+
+void ini_LLDE(LLDE *exe);
 void ini_tela(App tela[LIN][COL], LLSE *meusApps);
 void ini_LLSE(LLSE *meusApps);
 void ini_FILA(FILA *fila);
@@ -97,6 +109,9 @@ int main(int argc, char const *argv[]){
 	LLSE *meusApps;
 	meusApps = &meusA;	
 
+	LLDE appsRumED;
+	LLDE *exe;
+	exe = &appsRumED;
 
 	//instanciando a FILA
 	FILA FILA_app;
@@ -125,14 +140,64 @@ void area_de_trab (LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]){
 
 	int op;
 
-	printf("1. StoreED\nMobileED:\\>");
+	printf("1. StoreED\t 2. meusAppsED\t 3. AppRumED\t 4. Sair\nMobileED:\\>");
 	scanf("%d", &op);
 
 	switch(op){
 
-		case 1: StoreED(storeED,meusApps,fila,tela);
+		case 1: StoreED(storeED,meusApps,fila,tela);break;
+		case 2: meusAppsED()
 
 	}
+
+	return;
+}
+
+
+void meusAppsED(){
+
+	system("cls");
+	printf("#################################\n");
+	printf("#            meusAppsED         #\n");
+	printf("#################################\n");
+	print_instalados(exe);
+	printf("\n#################################\n");
+	meusAppsED_op(exe);
+
+
+
+	return;
+}
+
+
+void print_instalados(LLSE *exe) {
+	int i;
+
+	// printando as linhas iniciais
+	for(i = exe->ini; i != -1; i = exe->vet[i].prox) {
+
+		printf("-------------------------------\n");
+		printf("\t%d. \n", exe->vet[i].info.cod);
+		printf("%s\t", exe->vet[i].info.nome);
+		printf("-------------------------------\n");
+
+	}
+}
+
+
+void meusAppsED_op(LLDE *exe){
+
+	int op;
+
+	while(1){
+		printf("1. Inicializar\t2. Desinstalar\t 3. Voltar\n");
+		scanf("%d",&op);
+		if (op < 0 || op > 3){
+			system("cls");
+			printf("Opçao invalida. Tente novamente.\n");
+		}
+	}
+
 
 	return;
 }
@@ -147,13 +212,11 @@ void area_de_trab (LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]){
 */
 void StoreED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]){
 
-	int i;
-
 	system("cls");
-	printf("#############################\n");
-	printf("#  APLICATIVOS DISPONIVEIS  #\n");
-	printf("#############################\n\n");
-	print_LLV(storeED);
+	printf("#####################################\n");
+	printf("#               StoreED             #\n");
+	printf("#####################################\n\n");
+	print_store(storeED);
 	download_storeED(storeED,meusApps,fila,tela);
 
 	return;	
@@ -181,7 +244,7 @@ void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL])
 		pos = verif_storeED(storeED,nome);//pega a posiçao do app na lista LLV
 		if(pos < 0){
 			system("cls");
-			print_LLV(storeED);
+			print_store(storeED);
 			printf("\nAplicativo não encontrado.\n");
 		}else{
 			printf("\nDeseja instalar %s?\n1.sim\t2.nao\nMobileED:\\>",nome);
@@ -207,7 +270,7 @@ void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL])
 			return;
 		}else{
 			system("cls");
-			print_LLV(storeED);
+			print_store(storeED);
 		}
 
 	}
@@ -271,7 +334,7 @@ void add_meusApps(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL],int 
 	}
 
 	system("cls");
-	print_LLV(storeED);
+	print_store(storeED);
 	printf("\n%s foi adicionado a fila de downloads.\n",storeED->apps[pos].nome);
 	
 
@@ -931,12 +994,12 @@ void ini_LLSE(LLSE *meusApps) {
 
 
 /*
-* Nome: print_LLV(exibe a lista de aplicativos em sua ordem)
+* Nome: print_store(exibe a lista de aplicativos em sua ordem)
 * Função: exibe a lista de aplicativos para download
 * Funcionalidade: imprime os aplicativos em sua ordem para o usuario escolher
 * Retorno: void
 */
-void print_LLV(LLV *storeED){
+void print_store(LLV *storeED){
 
 	int i;
 
