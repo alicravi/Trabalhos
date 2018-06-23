@@ -64,7 +64,7 @@ void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL])
 int verif_storeED(LLV *storeED,char nome[namesize]);
 void add_meusApps(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL],int pos);
 int add_fila(LLSE *meusApps, FILA *fila, App app);
-void add_ini_LLDE(FILA *fila, int disp);
+void add_ini_LLDE_fila(FILA *fila, int disp);
 void add_LLSE(LLSE *meusApps, App app, int disp, int pos, int local);
 void add_LLV(LLV *storeED, App *temp);
 void ordena_LLSE(LLSE *v, App app);
@@ -279,6 +279,73 @@ void add_meusApps(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL],int 
 }
 
 
+void add_LLDE(LLDE *exe, App app, int disp, int pos, int local) {
+
+	int i, x;
+
+	switch(local) {
+		// insere no inicio
+	case 1:
+		exe->vet[disp].prox = exe->ini;
+		exe->vet[disp].ant = exe->vet[exe->ini].ant;
+		exe->vet[exe->ini].ant = disp;
+		exe->ini = disp;
+
+		break;
+
+		// insere no meio
+	case 2:
+		for(i = exe->ini; i != -1; i = exe->vet[i].prox)
+			if(app.cod < exe->vet[i].info.cod)
+				break;
+		x = exe->vet[i].ant;
+		exe->vet[disp].prox = exe->vet[x].prox;
+		exe->vet[x].prox = disp;
+		exe->vet[disp].ant = x;
+		exe->vet[exe->vet[disp].prox].ant = disp;
+
+		break;
+
+		// insere no fim
+	case 3:
+		exe->vet[disp].prox = exe->vet[pos].prox;
+		exe->vet[pos].prox = disp;
+		exe->vet[disp].ant = pos;
+
+		break;
+	}
+}
+
+
+void removeLLDE(LLDE *exe, int x) {
+
+	int i;
+
+	i = buscaPosicaoLLDE(exe, -1);
+	// removendo do inicio
+	if(x == exe->ini) {
+		exe->ini = exe->vet[x].prox;
+		exe->vet[exe->vet[x].prox].ant = exe->vet[x].ant;
+		exe->vet[x].prox = exe->disp;
+		exe->disp = x;
+		exe->vet[x].ant = i;
+	}
+	// removendo do fim
+	else if(exe->vet[x].prox == -1) {
+		exe->vet[exe->vet[x].ant].prox = exe->vet[x].prox;
+		exe->vet[x].prox = exe->disp;
+		exe->disp = x;
+	} else { // removendo do meio
+		exe->vet[exe->vet[x].ant].prox = exe->vet[x].prox;
+		exe->vet[exe->vet[x].prox].ant = exe->vet[x].ant;
+		exe->vet[x].prox = exe->disp;
+		exe->disp = x;
+		exe->vet[x].ant = i;
+	}
+}
+
+
+
 /*
 * Nome: add_fila(insere na fila)
 * Função: insere na fila
@@ -309,7 +376,7 @@ int add_fila(LLSE *meusApps, FILA *fila, App app) {
 		x = aloca_na_fila(fila);
 		// elemento a ser inserido no fim da fila
 		fila->vet[x].info = app;
-		add_ini_LLDE(fila, x);
+		add_ini_LLDE_fila(fila, x);
 
 		return 1;
 	} else {
@@ -319,7 +386,7 @@ int add_fila(LLSE *meusApps, FILA *fila, App app) {
 			fila->vet[x].prox = fila->ini;
 			fila->ini = x;
 		} else
-			add_ini_LLDE(fila, x);
+			add_ini_LLDE_fila(fila, x);
 
 		return 0;
 	}
@@ -327,17 +394,34 @@ int add_fila(LLSE *meusApps, FILA *fila, App app) {
 
 
 /*
-* Nome: add_ini_LLDE(insere no fim da fila)
+* Nome: add_ini_LLDE_fila(insere no fim da fila)
 * Função: insere app no fim da fila, ou seja, no inicio do LLDE
 * Funcionalidade: no LLDE insere no inicio, significa o fim da fila
 * Retorno: void
 */
-void add_ini_LLDE(FILA *fila, int disp){
+void add_ini_LLDE_fila(FILA *fila, int disp){
 
 	fila->vet[disp].prox = fila->ini;
 	fila->vet[disp].ant = fila->vet[fila->ini].ant;
 	fila->vet[fila->ini].ant = disp;
 	fila->ini = disp;
+
+	return;
+
+}
+
+
+/*
+* Nome: remove_lista()
+* Função: remove app da fila de downloads
+* Funcionalidade: remove o primeiro elemento da fila
+* Retorno: void
+*/
+void remove_fila(FILA *fila, int x) {
+	
+	fila->vet[fila->vet[x].ant].prox = fila->vet[x].prox;
+	fila->vet[x].prox = fila->disp;
+	fila->disp = x;
 
 	return;
 }
@@ -544,19 +628,20 @@ int aloca_na_fila(FILA * fila) {
 }
 
 
-/*
-* Nome: remove_lista()
-* Função: remove app da fila de downloads
-* Funcionalidade: remove o primeiro elemento da fila
-* Retorno: void
-*/
-void remove_fila(FILA *fila, int x) {
-	
-	fila->vet[fila->vet[x].ant].prox = fila->vet[x].prox;
-	fila->vet[x].prox = fila->disp;
-	fila->disp = x;
+int aloca_LLDE(LLDE *exe) {
 
-	return;
+	int x;
+
+	// se o disponivel for -2, significa que a lista esta cheia
+	if(exe->disp == -2)
+		return -5;
+
+	// pega disponivel
+	x = exe->disp;
+	// seta o disponivel para o proximo
+	exe->disp = exe->vet[exe->disp].prox;
+	// retorna o disponivel
+	return x;
 }
 
 
@@ -578,7 +663,6 @@ int verif_storeED(LLV *storeED,char nome[namesize]){
 
 	return -1;
 }
-
 
 
 /*
@@ -718,7 +802,6 @@ void ini_tela(App tela[LIN][COL], LLSE *meusApps){
 }
 
 
-
 /*
 * Nome: ini_FILA(inicializa as variaveis q controlam a fila)
 * Função: inicializa as variaveis que controlam a fila
@@ -743,22 +826,22 @@ void ini_FILA(FILA *fila) {
 }
 
 
-/*void ini_LLDE(LLDE *LLDEAppsRunEd) {
+void ini_LLDE(LLDE *exe) {
 
 	int i;
 
 	// primeiro disponivel
-	LLDEAppsRunEd->disp = 0;
+	exe->disp = 0;
 	// inicio da LLDE, mostrando que a lista esta vazia
-	LLDEAppsRunEd->inic = -1;
+	exe->ini = -1;
 	// percorrendo todo o vetor e encadeando LLDE
-	for(i = 0; i < MAXApp; i++) {
-		LLDEAppsRunEd->vetor[i].prox = i + 1;
-		LLDEAppsRunEd->vetor[i].ante = i - 1;
+	for(i = 0; i < APPS; i++) {
+		exe->vet[i].prox = i + 1;
+		exe->vet[i].ant = i - 1;
 	}
 	// setando ultimo elemento com -2
-	LLDEAppsRunEd->vetor[MAXApp - 1].prox = -2;
-}*/
+	exe->vet[APPS - 1].prox = -2;
+}
 
 
 /*
