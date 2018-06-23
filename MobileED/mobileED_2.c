@@ -103,6 +103,7 @@ int main(int argc, char const *argv[]){
 	FILA *fila;
 	fila = &FILA_app;
 
+	ini_LLDE(exe);
 	ini_LLV(storeED);
 	ini_LLSE(meusApps);
 	ini_FILA(fila);
@@ -321,7 +322,7 @@ void removeLLDE(LLDE *exe, int x) {
 
 	int i;
 
-	i = buscaPosicaoLLDE(exe, -1);
+	i = busca_LLDE(exe, -1);
 	// removendo do inicio
 	if(x == exe->ini) {
 		exe->ini = exe->vet[x].prox;
@@ -341,6 +342,31 @@ void removeLLDE(LLDE *exe, int x) {
 		exe->vet[x].prox = exe->disp;
 		exe->disp = x;
 		exe->vet[x].ant = i;
+	}
+}
+
+
+void ordena_LLDE(LLDE *exe, App app) {
+	int y, x;
+
+	// guardando posicao disponivel para insercao
+	x = aloca_LLDE(exe);
+	// verificando se ha espaco para insercao
+	y = busca_LLDE(exe, -1);
+	// guardando dado na posicao disponivel
+	exe->vet[x].info = app;
+	// se LLSE nao esta cheio, pode inserir
+	if(x != -5) {
+		// se for o primeiro na lista
+		if(exe->ini == -1) {
+			exe->vet[x].prox = exe->ini;
+			exe->ini = x;
+		} else if ( (app.cod< exe->vet[exe->ini].info.cod) )
+			add_LLDE(exe,app,x,y,1);
+		else if ( app.cod>=  exe->vet[y].info.cod)
+			add_LLDE(exe,app,x,y,3);
+		else
+			add_LLDE(exe,app,x,y,2);
 	}
 }
 
@@ -567,6 +593,24 @@ int busca_LLDEfila(FILA *v, int x) {
 
 	int i;
 
+	// pega inicio do LLDE
+	i = v->ini;
+	// percorre enquanto nao encontrar o fim
+	while(i != -1) {
+		// se proximo for igual a posicao procurada, achou a posicao de manipulacao
+		if(v->vet[i].prox == x)
+			break;
+		// seta o proximo
+		i = v->vet[i].prox;
+	}
+	// retorna posicao procurada
+	return i;
+}
+
+
+int busca_LLDE(LLDE *v, int x) {
+
+	int i;
 	// pega inicio do LLDE
 	i = v->ini;
 	// percorre enquanto nao encontrar o fim
