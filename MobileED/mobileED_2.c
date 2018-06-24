@@ -57,11 +57,25 @@ typedef struct {
 
 //prototipos das funções
 void leitura (LLV *storeED);
-void area_de_trab (LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]);
-void StoreED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]);
-void print_store(LLV *storeED);
-void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]);
+void area_de_trab (LLV *storeED,LLSE *meusApps,FILA *fila,LLDE *exe,App tela[LIN][COL],LLSE *pilha);
+void StoreED(LLV *storeED,LLSE *meusApps,FILA *fila,LLDE *exe,App tela[LIN][COL],LLSE *pilha);
+void AppsED(LLSE *meusApps,LLDE *exe,FILA *fila,App tela[LIN][COL]);
+void appsRum(LLDE *exe,FILA *fila);
+int appsRum_op(LLDE *exe,FILA *fila);
+void apps_pilha(LLSE *pilha);
+int meusAppsED_op(LLSE *meusApps,LLDE *exe,FILA *fila,App tela[LIN][COL]);
+int menu_pilha(LLSE *pilha);
+void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,LLDE *exe,App tela[LIN][COL],LLSE *pilha);
 int verif_storeED(LLV *storeED,char nome[namesize]);
+void run_app(LLSE *meusApps, LLDE *exe, int pos);
+void stop_app(App tela[LIN][COL], LLDE *exe, LLSE *meusApps, int posicao);
+void pipilha(LLSE *pilha);
+
+void print_store(LLV *storeED);
+void print_tela(App tela[LIN][COL]);
+void print_apps_exec(LLDE *exe);
+void print_pilha(LLSE * pilha);
+void print_instalados(LLSE *meusApps);
 
 void add_meusApps(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL],int pos);
 int add_fila(LLSE *meusApps, FILA *fila, App app);
@@ -69,6 +83,8 @@ void add_ini_LLDE_fila(FILA *fila, int disp);
 void add_LLSE(LLSE *meusApps, App app, int disp, int pos, int local);
 void add_LLV(LLV *storeED, App *temp);
 void add_LLDE(LLDE *exe, App app, int disp, int pos, int local);
+void add_ini_pilha(LLSE *pilha, int disp);
+void add_pilha(LLSE * pilha);
 
 void ordena_LLSE(LLSE *v, App app);
 void ordena_LLDE(LLDE *exe, App app) ;
@@ -78,20 +94,22 @@ int busca_app_fila(FILA *fila, char nome[namesize]);
 int busca_app_LLSE(LLSE *meusApps,char nome[namesize]);
 int busca_LLDEfila(FILA *v, int x);
 int busca_LLDE(LLDE *v, int x);
+int busca_exe(LLDE *exe, char nome[namesize]);
 
 int alocaNo(LLSE *v);
 int aloca_na_fila(FILA * fila);
 int aloca_LLDE(LLDE *exe);
 
 void remove_fila(FILA *fila, int x);
-void removeLLDE(LLDE *exe, int x);
+void remove_LLDE(LLDE *exe, int x);
+void remove_LLSE(LLSE *meusApps, int x);
+void remove_pilha(LLSE *pilha);
 
 void ini_LLDE(LLDE *exe);
 void ini_tela(App tela[LIN][COL], LLSE *meusApps);
 void ini_LLSE(LLSE *meusApps);
 void ini_FILA(FILA *fila);
 void ini_LLV(LLV *storeED);
-
 
 int main(int argc, char const *argv[]){
 
@@ -107,8 +125,12 @@ int main(int argc, char const *argv[]){
 	//instanciando LLSE
 	LLSE meusA;
 	LLSE *meusApps;
-	meusApps = &meusA;	
+	meusApps = &meusA;
+	LLSE p;
+	LLSE *pilha;
+	pilha = &p;
 
+	//instancianado LLDE
 	LLDE appsRumED;
 	LLDE *exe;
 	exe = &appsRumED;
@@ -121,10 +143,11 @@ int main(int argc, char const *argv[]){
 	ini_LLDE(exe);
 	ini_LLV(storeED);
 	ini_LLSE(meusApps);
+	ini_LLSE(pilha);
 	ini_FILA(fila);
 	leitura(storeED);
 	ini_tela(tela,meusApps);
-	area_de_trab(storeED,meusApps,fila,tela);
+	area_de_trab(storeED,meusApps,fila,exe,tela,pilha);
 
 	return 0;
 }
@@ -136,71 +159,389 @@ int main(int argc, char const *argv[]){
 * Funcionalidade: imprime opções para o usuario
 * Retorno: void
 */
-void area_de_trab (LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]){
+void area_de_trab (LLV *storeED,LLSE *meusApps,FILA *fila,LLDE *exe,App tela[LIN][COL],LLSE *pilha){
+
 
 	int op;
 
-	printf("1. StoreED\t 2. meusAppsED\t 3. AppRumED\t 4. Sair\nMobileED:\\>");
-	scanf("%d", &op);
 
-	switch(op){
+	while(1){
+		print_tela(tela);
+		printf("\n");
+		printf("1. StoreED\t 2. meusAppsED\t 3. AppRumED\t 4. Pilha\t 0. Sair\nMobileED:\\>");
+		scanf("%d", &op);
 
-		case 1: StoreED(storeED,meusApps,fila,tela);break;
-		case 2: meusAppsED()
 
+		switch(op){
+
+			case 0: exit(1);
+			case 1: StoreED(storeED,meusApps,fila,exe,tela,pilha);break;
+			case 2: AppsED(meusApps,exe,fila,tela);break;
+			case 3: appsRum(exe,fila);break;
+			case 4: pipilha(pilha);break;
+
+		}
 	}
 
 	return;
 }
 
 
-void meusAppsED(){
+void pipilha(LLSE *pilha){
+
+	int op;
+
+	system("cls");
+	printf("#################################\n");
+	printf("#              Pilha            #\n");
+	printf("#################################\n\n");
+	print_pilha(pilha);
+	op = menu_pilha(pilha);
+	if (op == 0)
+	{
+		system("cls");
+		return;
+	}
+
+	return;
+}
+
+
+int menu_pilha(LLSE *pilha){
+
+	int op;
+
+	printf("\n\n");
+	printf("1. inserir\t 2. remover\t 0. voltar\nMobileED:\\>");
+	scanf("%d",&op);
+
+	if (op == 0)
+		return 0;
+
+	if (op == 1)
+	{
+		add_pilha(pilha);
+		system("cls");
+	}else if (op == 2){
+		remove_pilha(pilha);
+		system("cls");
+	}
+
+
+	pipilha(pilha);
+}
+
+
+void add_pilha(LLSE * pilha) {
+
+	int pos;
+	char temp[APPS];
+	char tam[20];
+
+	pos = alocaNo(pilha);
+	if(pos == -5)
+		return;
+
+	strcpy(temp, "");
+	strcat(temp, "App ");
+
+	sprintf(tam, "%d", pos);
+
+	strcat(temp, tam);
+	strcpy(pilha->vet[pos].info.nome, temp);
+
+	pilha->vet[pos].info.cod = pos;
+
+	add_ini_pilha(pilha,pos);
+}
+
+
+void remove_pilha(LLSE *pilha) {
+
+	int i, pos;
+
+	pos = busca_app_LLSE(pilha, pilha->vet[pilha->ini].info.nome);
+
+	if(pos == -1) {
+		printf("Nao foi possivel desempilhar.\n");
+	} else {
+		pilha->ini = pilha->vet[pos].prox;
+		pilha->vet[pos].prox = pilha->disp;
+		pilha->disp = pos;
+	}
+}
+
+
+void print_pilha(LLSE * pilha) {
+	int i;
+
+	apps_pilha(pilha);
+}
+
+
+void apps_pilha(LLSE *pilha) {
+	int i;
+
+	for(i = pilha->ini; i != -1; i = pilha->vet[i].prox) {
+		printf("%s  \t\n", pilha->vet[i].info.nome);
+	}
+}
+
+
+
+void add_ini_pilha(LLSE *pilha, int disp) {
+	pilha->vet[disp].prox = pilha->ini;
+	pilha->ini = disp;
+}
+
+
+
+void appsRum(LLDE *exe,FILA *fila){
+
+	int op;
+
+	system("cls");
+	printf("#################################\n");
+	printf("#            AppsRumED          #\n");
+	printf("#################################\n\n");
+	print_apps_exec(exe);
+	printf("\n\n");
+	op = appsRum_op(exe,fila);
+	if (op == 0)
+	{
+		system("cls");
+		return;
+	}
+
+}
+
+
+int appsRum_op(LLDE *exe,FILA *fila){
+
+	char nome[namesize];
+	int pos,op,op2;
+	FILA *aux;
+
+	printf("\n");
+	printf("1. Interromper\t0. Sair\nMobileED:\\>");
+	scanf("%d",&op);
+
+	if(op == 1){
+
+		printf("Digita o nome do App:\nMobileED:\\>");
+		scanf("%s",nome);
+		pos = busca_exe(exe,nome);
+		if (pos < 0)
+		{
+			system("cls");
+			appsRum(exe,fila);
+			printf("App nao encontrado.\n");
+		}else{
+			printf("Deseja interromper o App %s ?\n1. sim\t2. nao\nMobileED:\\>",nome);
+			scanf("%d",&op2);
+			if (op2 == 1)
+			{
+				aux = fila;
+				remove_LLDE(exe,pos);
+				fila = aux;
+			}
+		}
+
+	}
+
+}
+
+
+
+void print_tela(App tela[LIN][COL]){
+
+	int i, j;
+
+
+	for(i = 0; i < LIN; i++) {
+		for(j = 0; j < COL; j++) {
+			printf("%.2d. %s",tela[j][i].cod,tela[j][i].nome);
+			printf("\t");
+		}
+		printf("\n");
+	}
+}
+
+
+void AppsED(LLSE *meusApps,LLDE *exe,FILA *fila,App tela[LIN][COL]){
+
+	int op;
 
 	system("cls");
 	printf("#################################\n");
 	printf("#            meusAppsED         #\n");
-	printf("#################################\n");
-	print_instalados(exe);
-	printf("\n#################################\n");
-	meusAppsED_op(exe);
-
-
+	printf("#################################\n\n");
+	print_instalados(meusApps);
+	printf("\n\n");
+	op = meusAppsED_op(meusApps,exe,fila,tela);
+	if (op == 0)
+	{
+		system("cls");
+		return;
+	}
 
 	return;
 }
 
 
-void print_instalados(LLSE *exe) {
+void print_instalados(LLSE *meusApps) {
 	int i;
 
-	// printando as linhas iniciais
-	for(i = exe->ini; i != -1; i = exe->vet[i].prox) {
-
-		printf("-------------------------------\n");
-		printf("\t%d. \n", exe->vet[i].info.cod);
-		printf("%s\t", exe->vet[i].info.nome);
-		printf("-------------------------------\n");
+	for(i = meusApps->ini; i != -1; i = meusApps->vet[i].prox) {
+		printf("\t%.2d. %s\n", meusApps->vet[i].info.cod,meusApps->vet[i].info.nome);
 
 	}
 }
 
 
-void meusAppsED_op(LLDE *exe){
+int meusAppsED_op(LLSE *meusApps,LLDE *exe,FILA *fila,App tela[LIN][COL]){
 
-	int op;
+	int op1,op2,pos;
+	FILA *aux;
+	char nome[namesize];
 
-	while(1){
-		printf("1. Inicializar\t2. Desinstalar\t 3. Voltar\n");
-		scanf("%d",&op);
-		if (op < 0 || op > 3){
-			system("cls");
-			printf("Opçao invalida. Tente novamente.\n");
-		}
+	printf("1. Inicializar\t2. Desinstalar\t 0. Voltar\nMobileED:\\>");
+	scanf("%d",&op1);
+
+	if(op1 < 0 || op1 > 2){
+		printf("Opcao invalida. Tente novamente.\n");
+		meusAppsED_op(meusApps,exe,fila,tela);
 	}
 
+	switch(op1){
+
+		case 0: 
+
+				break;
+		case 1:
+
+				printf("Digite o nome do App: \nMobileED:\\>");
+				scanf("%s",nome);
+				pos = busca_app_LLSE(meusApps,nome);
+				if (pos < 0)
+				{
+					system("cls");
+					AppsED(meusApps,exe,fila,tela);
+					printf("App nao encontrado.\n");
+				}else{
+					printf("%s foi encontrado!\n",nome);
+					printf("Deseja inicializar o aplicativo? \n1. sim\t2. nao\nMobileED:\\>");
+					scanf("%d",&op2);
+					if (op2 == 1)
+					{
+						run_app(meusApps,exe,pos);
+					}
+
+				}
+				break;
+
+		case 2:
+
+				printf("Digite o nome do App: \nMobileED:\\>");
+				scanf("%s",nome);
+
+				pos = busca_app_LLSE(meusApps,nome);
+
+				if (pos == -1)
+				{
+					system("cls");
+					AppsED(meusApps,exe,fila,tela);
+					printf("App não encontrado.\n");
+				}else{
+					printf("%s foi encontrado!\n",nome);
+					printf("Deseja desinstalar o App? \n1. sim\t2. nao\nMobileED:\\>");
+					scanf("%d",&op2);
+					if (op2 == 1)
+					{
+						aux = fila;
+						stop_app(tela,exe,meusApps,pos);
+						fila = aux;
+					}
+				}
+				break;
+		
+	}
+
+
+	return 0;
+}
+
+
+void run_app(LLSE *meusApps, LLDE *exe, int pos){
+
+	if(busca_exe(exe, meusApps->vet[pos].info.nome) > -1) {
+		printf("%s ja esta em execucao.\n", meusApps->vet[pos].info.nome);
+	} else {
+		App aux;
+		aux.cod = meusApps->vet[pos].info.cod;
+		strcpy(aux.nome, meusApps->vet[pos].info.nome);
+		strcpy(aux.stat, "Em Exec.");
+		ordena_LLDE(exe, aux);
+	}
+}
+
+
+
+void stop_app(App tela[LIN][COL], LLDE *exe, LLSE *meusApps, int posicao) {
+
+	int i, j, cont;
+	int pos = busca_exe(exe,meusApps->vet[posicao].info.nome);
+
+	App aux;
+	aux.cod = exe->vet[pos].info.cod;
+	strcpy(aux.nome, exe->vet[pos].info.nome);
+	strcpy(aux.stat, "Disponivel");
+
+	if(pos > -1) {
+		remove_LLDE(exe,pos);
+		remove_LLSE(meusApps,posicao);
+	} else { 
+		remove_LLSE(meusApps,posicao);
+	}
+
+	for(i = 0; i < LIN; i++) {
+		for(j = 0; j < COL; j++) {
+			printf("%s ---- %s\n", tela[i][j].nome, meusApps->vet[posicao].info.nome);
+			if(!strcmp(tela[i][j].nome, meusApps->vet[posicao].info.nome)) {
+				strcpy(tela[i][j].nome, "\t");
+				tela[i][j].cod = 0;
+				cont = 1;
+				break;
+			}
+		}
+		if(cont) {
+			break;
+		}
+	}
+	printf("%s foi desinstalado com sucesso.\n", exe->vet[posicao].info.nome);
+}
+
+
+
+void remove_LLSE(LLSE *meusApps, int x) {
+
+	int i, j, k, controle;
+	
+	i = busca_pos(meusApps,x);
+
+	if(x == meusApps->ini) {
+		meusApps->ini = meusApps->vet[x].prox;
+		meusApps->vet[x].prox = meusApps->disp;
+		meusApps->disp = x;
+	} else { 
+		meusApps->vet[i].prox = meusApps->vet[x].prox;
+		meusApps->vet[x].prox = meusApps->disp;
+		meusApps->disp = x;
+	}
 
 	return;
 }
+
 
 
 /*
@@ -210,18 +551,30 @@ void meusAppsED_op(LLDE *exe){
 * no vetor meusApps(se já está instalado)
 * Retorno: void
 */
-void StoreED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]){
+void StoreED(LLV *storeED,LLSE *meusApps,FILA *fila,LLDE *exe,App tela[LIN][COL],LLSE *pilha){
 
 	system("cls");
 	printf("#####################################\n");
 	printf("#               StoreED             #\n");
 	printf("#####################################\n\n");
 	print_store(storeED);
-	download_storeED(storeED,meusApps,fila,tela);
+	download_storeED(storeED,meusApps,fila,exe,tela,pilha);
 
 	return;	
 
 }
+
+
+void print_apps_exec(LLDE *exe) {
+	
+	int i;
+
+	for(i = exe->ini; i != -1; i = exe->vet[i].prox) {
+		printf("\t%.2d. %s", exe->vet[i].info.cod,exe->vet[i].info.nome);
+
+	}
+}
+
 
 
 /*
@@ -232,7 +585,7 @@ void StoreED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]){
 * para instalaçao, caso ele exista
 * Retorno: void
 */
-void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL]){
+void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,LLDE *exe,App tela[LIN][COL],LLSE *pilha){
 
 	int op1,op2 = 1,pos = 0;
 	char nome[namesize];
@@ -245,7 +598,7 @@ void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL])
 		if(pos < 0){
 			system("cls");
 			print_store(storeED);
-			printf("\nAplicativo não encontrado.\n");
+			printf("\nAplicativo nao encontrado.\n");
 		}else{
 			printf("\nDeseja instalar %s?\n1.sim\t2.nao\nMobileED:\\>",nome);
 			scanf("%d",&op1);
@@ -267,6 +620,7 @@ void download_storeED(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL])
 
 		if (op2 == 2){
 			system("cls");
+			area_de_trab(storeED,meusApps,fila,exe,tela,pilha);
 			return;
 		}else{
 			system("cls");
@@ -294,23 +648,17 @@ void add_meusApps(LLV *storeED,LLSE *meusApps,FILA *fila,App tela[LIN][COL],int 
 
 	if (busca_app_LLSE(meusApps,storeED->apps[pos].nome) > -1)
 	{
-		printf("%s já está instalado.\n",storeED->apps[pos].nome);
+		printf("%s ja esta instalado.\n",storeED->apps[pos].nome);
 		return;
 	}else{
-
-		// construindo auxiliar
-		
 		aux.cod = storeED->apps[pos].cod;
 		strcpy(aux.nome, storeED->apps[pos].nome);
 		strcpy(aux.stat, storeED->apps[pos].stat);
 
-		// insere na fila e depois de cheia, insere na LLSE
 		stat = add_fila(meusApps,fila,aux);
 
-		// se inseriu na lista meusApps, insere no menu
 		if(stat) {
 
-			// resetando menu
 			for(i = 0; i < 3; i++) {
 				for(j = 0; j < 3; j++) {
 					strcpy(tela[i][j].nome, "\t");
@@ -348,7 +696,7 @@ void add_LLDE(LLDE *exe, App app, int disp, int pos, int local) {
 	int i, x;
 
 	switch(local) {
-		// insere no inicio
+
 	case 1:
 		exe->vet[disp].prox = exe->ini;
 		exe->vet[disp].ant = exe->vet[exe->ini].ant;
@@ -357,7 +705,6 @@ void add_LLDE(LLDE *exe, App app, int disp, int pos, int local) {
 
 		break;
 
-		// insere no meio
 	case 2:
 		for(i = exe->ini; i != -1; i = exe->vet[i].prox)
 			if(app.cod < exe->vet[i].info.cod)
@@ -370,7 +717,6 @@ void add_LLDE(LLDE *exe, App app, int disp, int pos, int local) {
 
 		break;
 
-		// insere no fim
 	case 3:
 		exe->vet[disp].prox = exe->vet[pos].prox;
 		exe->vet[pos].prox = disp;
@@ -381,12 +727,12 @@ void add_LLDE(LLDE *exe, App app, int disp, int pos, int local) {
 }
 
 
-void removeLLDE(LLDE *exe, int x) {
+void remove_LLDE(LLDE *exe, int x) {
 
 	int i;
 
 	i = busca_LLDE(exe, -1);
-	// removendo do inicio
+
 	if(x == exe->ini) {
 		exe->ini = exe->vet[x].prox;
 		exe->vet[exe->vet[x].prox].ant = exe->vet[x].ant;
@@ -394,39 +740,42 @@ void removeLLDE(LLDE *exe, int x) {
 		exe->disp = x;
 		exe->vet[x].ant = i;
 	}
-	// removendo do fim
+
 	else if(exe->vet[x].prox == -1) {
 		exe->vet[exe->vet[x].ant].prox = exe->vet[x].prox;
 		exe->vet[x].prox = exe->disp;
 		exe->disp = x;
-	} else { // removendo do meio
+	} else { 
 		exe->vet[exe->vet[x].ant].prox = exe->vet[x].prox;
 		exe->vet[exe->vet[x].prox].ant = exe->vet[x].ant;
 		exe->vet[x].prox = exe->disp;
 		exe->disp = x;
 		exe->vet[x].ant = i;
 	}
+
+
+	return;
 }
 
 
 void ordena_LLDE(LLDE *exe, App app) {
 	int y, x;
 
-	// guardando posicao disponivel para insercao
+
 	x = aloca_LLDE(exe);
-	// verificando se ha espaco para insercao
+	
 	y = busca_LLDE(exe, -1);
-	// guardando dado na posicao disponivel
+	
 	exe->vet[x].info = app;
-	// se LLSE nao esta cheio, pode inserir
+	
 	if(x != -5) {
-		// se for o primeiro na lista
+		
 		if(exe->ini == -1) {
 			exe->vet[x].prox = exe->ini;
 			exe->ini = x;
 		} else if ( (app.cod< exe->vet[exe->ini].info.cod) )
 			add_LLDE(exe,app,x,y,1);
-		else if ( app.cod>=  exe->vet[y].info.cod)
+		else if (app.cod >=  exe->vet[y].info.cod)
 			add_LLDE(exe,app,x,y,3);
 		else
 			add_LLDE(exe,app,x,y,2);
@@ -445,32 +794,25 @@ int add_fila(LLSE *meusApps, FILA *fila, App app) {
 	
 	int x, y, i, j, cont;
 
-	// instanciando auxiliar
+	
 	App aux;
-	// captura posicao disponivel
+	
 	x = aloca_na_fila(fila);
 
-	// se fila estiver cheia
+	
 	if(x == -5) {
-
-		// buscar a posicao do ultimo, para inseri-lo na LLSE
+		
 		y = busca_LLDEfila(fila, -1);
-		// guarda o elemento y na variavel auxiliar
 		aux = fila->vet[y].info;
-		// remove o primeiro da fila
 		remove_fila(fila, y);
-		// insere o elemento removido nos meusApps
 		ordena_LLSE(meusApps, aux);
-
 		x = aloca_na_fila(fila);
-		// elemento a ser inserido no fim da fila
 		fila->vet[x].info = app;
 		add_ini_LLDE_fila(fila, x);
 
 		return 1;
 	} else {
 		fila->vet[x].info = app;
-		// inserindo o primeiro elemento
 		if(fila->ini == -1) {
 			fila->vet[x].prox = fila->ini;
 			fila->ini = x;
@@ -526,21 +868,15 @@ void remove_fila(FILA *fila, int x) {
 void ordena_LLSE(LLSE *v, App app){
 
 	int x, y;
-	// guardando posicao disponivel para insercao
+
 	x = alocaNo(v);
-	// verificando se ha espaco para insercao
 	y = busca_pos(v, -1);
-	// guardando dado na posicao disponivel
 	v->vet[x].info = app;
-	// se LLSE nao esta cheio, pode inserir
 	if(x != -5) {
-		// inserindo no inicio
-		if ( (app.cod < v->vet[v->ini].info.cod) || v->ini == -1 )
+		if ((app.cod < v->vet[v->ini].info.cod) || v->ini == -1 )
 			add_LLSE(v,app,x,y,1);
-		// inserindo no fim
 		else if (app.cod >=  v->vet[y].info.cod)
 			add_LLSE(v,app,x,y,3);
-		// inseriondo no meio
 		else
 			add_LLSE(v,app,x,y,2);
 	}
@@ -558,28 +894,28 @@ void add_LLSE(LLSE *meusApps, App app, int disp, int pos, int local) {
 	int i, j;
 
 	switch(local) {
-		// insere no inicio
-	case 1:
-		meusApps->vet[disp].prox = meusApps->ini;
-		meusApps->ini = disp;
-		break;
-		// insere no meio
-	case 2:
-		for(i = meusApps->ini; i != -1; i = meusApps->vet[i].prox)
-			if(app.cod < meusApps->vet[i].info.cod)
-				break;
-		j = busca_pos(meusApps, i);
-		meusApps->vet[disp].prox = meusApps->vet[j].prox;
-		meusApps->vet[j].prox = disp;
-		break;
-		// inserir no fim
-	case 3:
-		meusApps->vet[disp].prox = meusApps->vet[pos].prox;
-		meusApps->vet[pos].prox = disp;
-		break;
-	default:
-		printf("Erro: opcao de insercao invalida.\n");
-		return;
+
+		case 1:
+			meusApps->vet[disp].prox = meusApps->ini;
+			meusApps->ini = disp;
+			break;
+
+		case 2:
+			for(i = meusApps->ini; i != -1; i = meusApps->vet[i].prox)
+				if(app.cod < meusApps->vet[i].info.cod)
+					break;
+			j = busca_pos(meusApps, i);
+			meusApps->vet[disp].prox = meusApps->vet[j].prox;
+			meusApps->vet[j].prox = disp;
+			break;
+
+		case 3:
+			meusApps->vet[disp].prox = meusApps->vet[pos].prox;
+			meusApps->vet[pos].prox = disp;
+			break;
+		default:
+			printf("Erro: opcao de insercao invalida.\n");
+			return;
 	}
 }
 
@@ -593,17 +929,15 @@ void add_LLSE(LLSE *meusApps, App app, int disp, int pos, int local) {
 int busca_pos(LLSE *meusApps, int x) {
 
 	int i;
-	// pega inicio do LLSE
+
 	i = meusApps->ini;
-	// percorre enquanto nao encontrar o fim
+
 	while(i != -1) {
-		// se proximo for igual a posicao procurada, achou a posicao de manipulacao
 		if(meusApps->vet[i].prox == x)
 			break;
-		// seta o proximo
 		i = meusApps->vet[i].prox;
 	}
-	// retorna posicao procurada
+
 	return i;
 }
 
@@ -656,35 +990,40 @@ int busca_LLDEfila(FILA *v, int x) {
 
 	int i;
 
-	// pega inicio do LLDE
 	i = v->ini;
-	// percorre enquanto nao encontrar o fim
 	while(i != -1) {
-		// se proximo for igual a posicao procurada, achou a posicao de manipulacao
 		if(v->vet[i].prox == x)
 			break;
-		// seta o proximo
 		i = v->vet[i].prox;
 	}
-	// retorna posicao procurada
+
 	return i;
+}
+
+
+int busca_exe(LLDE *exe, char nome[namesize]) {
+	int i;
+	for(i = exe->ini; i != -1; i = exe->vet[i].prox) {
+		if(!strcmp(exe->vet[i].info.nome, nome)) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 
 int busca_LLDE(LLDE *v, int x) {
 
 	int i;
-	// pega inicio do LLDE
+
 	i = v->ini;
-	// percorre enquanto nao encontrar o fim
+
 	while(i != -1) {
-		// se proximo for igual a posicao procurada, achou a posicao de manipulacao
 		if(v->vet[i].prox == x)
 			break;
-		// seta o proximo
 		i = v->vet[i].prox;
 	}
-	// retorna posicao procurada
+
 	return i;
 }
 
@@ -699,15 +1038,12 @@ int alocaNo(LLSE *v){
 
 	int d;
 
-	// se o disponivel por -2, significa que a lista esta cheia
 	if(v->disp == -2)
 		return -5;
 
-	// pega disponivel
 	d = v->disp;
-	// seta o disponivel para o proximo
 	v->disp = v->vet[v->disp].prox;
-	// retorna o disponivel
+
 	return d;
 }
 
@@ -722,15 +1058,12 @@ int aloca_na_fila(FILA * fila) {
 
 	int x;
 
-	// se o disponivel for -2, significa que a lista esta cheia
 	if(fila->disp == -2)
 		return -5;
 
-	// pega disponivel
 	x = fila->disp;
-	// seta o disponivel para o proximo
 	fila->disp = fila->vet[fila->disp].prox;
-	// retorna o disponivel
+
 	return x;
 }
 
@@ -739,15 +1072,12 @@ int aloca_LLDE(LLDE *exe) {
 
 	int x;
 
-	// se o disponivel for -2, significa que a lista esta cheia
 	if(exe->disp == -2)
 		return -5;
 
-	// pega disponivel
 	x = exe->disp;
-	// seta o disponivel para o proximo
 	exe->disp = exe->vet[exe->disp].prox;
-	// retorna o disponivel
+
 	return x;
 }
 
@@ -783,13 +1113,12 @@ void add_LLV(LLV *storeED, App *temp){
 
 	int i,aux = 0;
 
-	//verifica se a lista está cheia
 	if((storeED->IA == storeED-> IL) && (storeED->FA == storeED->FL)){
 		printf("A lista está cheia.\n");
 		return;
 	}
 
-	if (storeED->IL == -1)//verifica se a lista está vazia e insere o primeiro elemento
+	if (storeED->IL == -1)
 	{
 		storeED->IL = storeED->FL = storeED->IA;
 		storeED->apps[storeED->IL].cod = temp->cod;
@@ -798,38 +1127,36 @@ void add_LLV(LLV *storeED, App *temp){
 		return;
 	}
 
-	//verifica se o codigo do elemento é menor que o do primeiro elemento da lista
 	if(temp->cod < storeED->apps[storeED->IL].cod){
-		if (storeED->IL > storeED->IA)//verifica se há espaço à esquerda do primeira elemento
+		if (storeED->IL > storeED->IA)
 		{
-			(storeED->IL)--;//novo inicio da lista
-		}else{//ha espaço à direita
-			for(i = storeED->FL; i >= storeED->IL; i--){//move os elementos para a direita liberando espaço no início
+			(storeED->IL)--;
+		}else{
+			for(i = storeED->FL; i >= storeED->IL; i--){
 				storeED->apps[i+1].cod = storeED->apps[i].cod;
 				strcpy(storeED->apps[i+1].nome,storeED->apps[i].nome);
 				strcpy(storeED->apps[i+1].stat,storeED->apps[i].stat);
 			}
-			(storeED->FL)++;//reajusta o FL
+			(storeED->FL)++;
 		}
-		//adiciona o elemento no IL
+		
 		storeED->apps[storeED->IL].cod = temp->cod;
 		strcpy(storeED->apps[storeED->IL].nome,temp->nome);
 		strcpy(storeED->apps[storeED->IL].stat,temp->stat);
 		return;	
 
-	//inserindo no fim da lista (caso o codigo do elemento seja maior que o do ultimo elemento da lista)
 	}else if(temp->cod > storeED->apps[storeED->FL].cod){
 	
-		if (storeED->FA > storeED->FL)//verifica se ha espaço à direita do ultimo elemento
+		if (storeED->FA > storeED->FL)
 		{
-			(storeED->FL)++;//novo fim da lista
-		}else{//ha espaço à esquerda
-			for(i = storeED->IL; i <= storeED->FL; i++){//move os elementos para à esquerda liberando espaço no final
+			(storeED->FL)++;
+		}else{
+			for(i = storeED->IL; i <= storeED->FL; i++){
 				storeED->apps[i-1].cod = storeED->apps[i].cod;
 				strcpy(storeED->apps[i-1].nome,storeED->apps[i].nome);
 				strcpy(storeED->apps[i-1].stat,storeED->apps[i].stat);
 			}
-			(storeED->IL)--;//novo inicio da lista
+			(storeED->IL)--;
 		}
 		storeED->apps[storeED->FL].cod = temp->cod;
 		strcpy(storeED->apps[storeED->FL].nome,temp->nome);
@@ -838,7 +1165,7 @@ void add_LLV(LLV *storeED, App *temp){
 	}else{
 		//insere no meio
 		for(i = storeED->IL; i <= storeED->FL;i++){
-			if (temp->cod < storeED->apps[i].cod)//verifica se o codigo é menor que algum elemento do meio da lista
+			if (temp->cod < storeED->apps[i].cod)
 			{
 				aux = i;
 				break;
@@ -881,7 +1208,6 @@ void ini_tela(App tela[LIN][COL], LLSE *meusApps){
 	
 	int i, j, cont = 0;
 
-	// resetando menu
 	for(i = 0; i < LIN; i++) {
 		for(j = 0; j < COL; j++) {
 			strcpy(tela[i][j].nome, "\t");
@@ -891,7 +1217,6 @@ void ini_tela(App tela[LIN][COL], LLSE *meusApps){
 	}
 
 	cont = meusApps->ini;
-	// preenchendo menu[][]
 	for(i = 0; i < LIN; i++) {
 		for(j = 0; j < COL; j++) {
 			if(meusApps->ini != -1) {
@@ -919,16 +1244,12 @@ void ini_FILA(FILA *fila) {
 
 	int i;
 
-	// primeiro disponivel
 	fila->disp = 0;
-	// inicio da LLDE, mostrando que a lista esta vazia
 	fila->ini = -1;
-	// percorrendo todo o vetor e encadeando LLDE
 	for(i = 0; i < MFila; i++) {
 		fila->vet[i].prox = i + 1;
 		fila->vet[i].ant = i - 1;
 	}
-	// setando ultimo elemento com -2
 	fila->vet[MFila - 1].prox = -2;
 }
 
@@ -937,16 +1258,12 @@ void ini_LLDE(LLDE *exe) {
 
 	int i;
 
-	// primeiro disponivel
 	exe->disp = 0;
-	// inicio da LLDE, mostrando que a lista esta vazia
 	exe->ini = -1;
-	// percorrendo todo o vetor e encadeando LLDE
 	for(i = 0; i < APPS; i++) {
 		exe->vet[i].prox = i + 1;
 		exe->vet[i].ant = i - 1;
 	}
-	// setando ultimo elemento com -2
 	exe->vet[APPS - 1].prox = -2;
 }
 
@@ -978,13 +1295,10 @@ void ini_LLSE(LLSE *meusApps) {
 
 	int i;
 
-	// primeiro disponivel
+	
 	meusApps->disp = 0;
-	// inicio da LLSE, aponta para -1, simbolizando q a lista esta vazia
 	meusApps->ini = -1;
-	// o ultimo aponta para null, no caso -2
 	meusApps->vet[APPS - 1].prox = -2;
-	// o atual aponta para o proximo
 	for(i = 0; i < (APPS - 1); i++)
 		meusApps->vet[i].prox = i + 1;
 
